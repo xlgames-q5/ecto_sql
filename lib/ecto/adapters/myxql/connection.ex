@@ -641,7 +641,7 @@ if Code.ensure_loaded?(MyXQL) do
     end
 
     def execute_ddl({:alter, %Table{} = table, changes}) do
-      [["ALTER TABLE ", quote_table(table.prefix, table.name), ?\s, comments_table(table.comment),
+      [["ALTER TABLE ", quote_table(table.prefix, table.name), ?\s, comments_table(table.comment), ?\s, 
         column_changes(table, changes), pk_definitions(changes, ", ADD ")]]
     end
 
