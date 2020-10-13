@@ -632,7 +632,7 @@ if Code.ensure_loaded?(MyXQL) do
         if_do(command == :create_if_not_exists, "IF NOT EXISTS "),
         quote_table(table.prefix, table.name),
         table_structure,
-        engine_expr(table.engine), options_expr(table.options)]]
+        engine_expr(table.engine), comments_table(table.comment), options_expr(table.options)]]
     end
 
     def execute_ddl({command, %Table{} = table}) when command in [:drop, :drop_if_exists] do
@@ -641,7 +641,7 @@ if Code.ensure_loaded?(MyXQL) do
     end
 
     def execute_ddl({:alter, %Table{} = table, changes}) do
-      [["ALTER TABLE ", quote_table(table.prefix, table.name), ?\s,
+      [["ALTER TABLE ", quote_table(table.prefix, table.name), ?\s, comments_table(table.comment),
         column_changes(table, changes), pk_definitions(changes, ", ADD ")]]
     end
 
@@ -718,6 +718,11 @@ if Code.ensure_loaded?(MyXQL) do
       end
     end
 
+    defp comments_table(nil), do: []
+    defp comments_table(comment) do
+      [" COMMENT = '", comment, ?']
+    end
+
     defp column_definitions(table, columns) do
       intersperse_map(columns, ", ", &column_definition(table, &1))
     end
@@ -776,7 +781,8 @@ if Code.ensure_loaded?(MyXQL) do
     defp column_options(opts) do
       default = Keyword.fetch(opts, :default)
       null    = Keyword.get(opts, :null)
-      [default_expr(default), null_expr(null)]
+      comment = Keyword.get(opts, :comment)
+      [default_expr(default), null_expr(null), comment_expr(comment)]
     end
 
     defp null_expr(false), do: " NOT NULL"
@@ -795,6 +801,11 @@ if Code.ensure_loaded?(MyXQL) do
       do: error!(nil, ":default is not supported for json columns by MySQL")
     defp default_expr(:error),
       do: []
+
+    defp comment_expr(nil), do: []
+    defp comment_expr(comment) do
+      [" COMMENT '", comment, ?']
+    end
 
     defp index_expr(literal) when is_binary(literal),
       do: literal
